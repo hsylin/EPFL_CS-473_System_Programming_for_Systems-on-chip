@@ -5,18 +5,18 @@
 
 
 // Fixed Point: Addition
-fixed add_fixed_point(fixed a, fixed b, uint8_t f) {
+fixed add_fixed_point(fixed a, fixed b) {
   return (a + b);
 }
 
 
 // Fixed Point: Subtraction
-fixed sub_fixed_point(fixed a, fixed b, uint8_t f) {
+fixed sub_fixed_point(fixed a, fixed b) {
   return (a - b);
 }
 
 // Fixed Point: Multiplication
-fixed mul_fixed_point(fixed a, fixed b, uint8_t f) {
+fixed mul_fixed_point(fixed a, fixed b) {
   // a * b is same as
   // a * 2^f * b * 2^f = (a * b) * 2^f
   // meaning that a * b has the binary point at bit '2f'
@@ -29,32 +29,6 @@ fixed mul_fixed_point(fixed a, fixed b, uint8_t f) {
   return mul_num;
 }
 
-float fixed_point_to_float(fixed a, uint8_t f){
-  //printf("FIXED: %ld ==> FLOAT: %f\n", a, (float)( a / (1 << f)));
-  return (float)( a / (1 << f));
-}
-
-fixed float_to_fixed_point(float float_input, uint8_t f){
-  // The algorithm to convert float to fixed point is as below
-  // 1. Calculate x = floating_input * 2^(fractional_bits)
-  // 2. Round x to the nearest whole number (e.g. round(x))... as you dont want 100.100 the extra 00
-  // 3. Store the rounded x in an integer container
-
-
-  // 1 << f
-  // 1 in binary representation is 00000001
-  // << f shifts the bit by f bits
-  // thus if we want to shift by f = 3, then it will shift by 3
-  // getting 00001000, which is 2^3
-
-  // Rounding?
-  // When you do say 1.3 * 2^3, you get 10.4 which is not an integer
-  // you don't want the float points, so you round(10.4) = 10
-  // of course there will be some error, as 10 / 2^3 = 1.25
-  fixed scaled_num = (float_input * (1 << f));
-  printf("FLOAT: %f ==> FIXED: %ld\n", float_input, scaled_num);
-  return scaled_num;
-}
 
 //! \brief  Mandelbrot fractal point calculation function
 //! \param  cx    x-coordinate
@@ -67,9 +41,9 @@ uint16_t calc_mandelbrot_point_soft(fixed cx, fixed cy, uint16_t n_max) {
   uint16_t n = 0;
   fixed xx, yy, two_xy;
   do {
-    xx = mul_fixed_point(x, x, FIXED_POINT_FRAC_BITS);
-    yy = mul_fixed_point(y, y, FIXED_POINT_FRAC_BITS);
-    two_xy =  mul_fixed_point(ITOFIX(2), mul_fixed_point(x, y, FIXED_POINT_FRAC_BITS), FIXED_POINT_FRAC_BITS);
+    xx = mul_fixed_point(x, x);
+    yy = mul_fixed_point(y, y);
+    two_xy =  mul_fixed_point(ITOFIX(2), mul_fixed_point(x, y));
 
     x = xx - yy + cx;
     y = two_xy + cy;
