@@ -1,0 +1,175 @@
+#include "../include/fractal_fxpt.h"
+#include <swap.h>
+#include <stddef.h>
+#include <stdio.h>
+
+
+// Fixed Point: Addition
+fixed add_fixed_point(fixed a, fixed b, uint8_t f) {
+  return (a + b);
+}
+
+
+// Fixed Point: Subtraction
+fixed sub_fixed_point(fixed a, fixed b, uint8_t f) {
+  return (a - b);
+}
+
+// Fixed Point: Multiplication
+fixed mul_fixed_point(fixed a, fixed b, uint8_t f) {
+  // a * b is same as
+  // a * 2^f * b * 2^f = (a * b) * 2^f
+  // meaning that a * b has the binary point at bit '2f'
+  // to keep the binary point at f, you need to rescale by 2^f
+  // that is a * b / 2^f or a * b >> f
+
+  // This operation will throw away f fractional bits
+  // Thus rounding may be needed
+  fixed mul_num = (a * b) >> FIXED_POINT_FRAC_BITS;
+  return mul_num;
+}
+
+float fixed_point_to_float(fixed a, uint8_t f){
+  //printf("FIXED: %ld ==> FLOAT: %f\n", a, (float)( a / (1 << f)));
+  return (float)( a / (1 << f));
+}
+
+fixed float_to_fixed_point(float float_input, uint8_t f){
+  // The algorithm to convert float to fixed point is as below
+  // 1. Calculate x = floating_input * 2^(fractional_bits)
+  // 2. Round x to the nearest whole number (e.g. round(x))... as you dont want 100.100 the extra 00
+  // 3. Store the rounded x in an integer container
+
+
+  // 1 << f
+  // 1 in binary representation is 00000001
+  // << f shifts the bit by f bits
+  // thus if we want to shift by f = 3, then it will shift by 3
+  // getting 00001000, which is 2^3
+
+  // Rounding?
+  // When you do say 1.3 * 2^3, you get 10.4 which is not an integer
+  // you don't want the float points, so you round(10.4) = 10
+  // of course there will be some error, as 10 / 2^3 = 1.25
+  fixed scaled_num = (float_input * (1 << f));
+  printf("FLOAT: %f ==> FIXED: %ld\n", float_input, scaled_num);
+  return scaled_num;
+}
+
+//! \brief  Mandelbrot fractal point calculation function
+//! \param  cx    x-coordinate
+//! \param  cy    y-coordinate
+//! \param  n_max maximum number of iterations
+//! \return       number of performed iterations at coordinate (cx, cy)
+uint16_t calc_mandelbrot_point_soft(fixed cx, fixed cy, uint16_t n_max) {
+  fixed x = FTOFIX(cx);
+  fixed y = FTOFIX(cy);
+  uint16_t n = 0;
+  fixed xx, yy, two_xy;
+  do {
+    xx = mul_fixed_point(x, x, FIXED_POINT_FRAC_BITS);
+    yy = mul_fixed_point(y, y, FIXED_POINT_FRAC_BITS);
+    two_xy =  mul_fixed_point(ITOFIX(2), mul_fixed_point(x, y, FIXED_POINT_FRAC_BITS), FIXED_POINT_FRAC_BITS);
+
+    x = xx - yy + cx;
+    y = two_xy + cy;
+    ++n;
+  } while ((xx + yy < ITOFIX(4)) && (n < n_max));
+  return n;
+}
+
+
+
+
+
+
+//! \brief  Map number of performed iterations to black and white
+//! \param  iter  performed number of iterations
+//! \param  n_max maximum number of iterations
+//! \return       colour
+rgb565 iter_to_bw(uint16_t iter, uint16_t n_max) {
+  if (iter == n_max) {
+    return 0x0000;
+  }
+  return 0xffff;
+}
+
+
+//! \brief  Map number of performed iterations to grayscale
+//! \param  iter  performed number of iterations
+//! \param  n_max maximum number of iterations
+//! \return       colour
+rgb565 iter_to_grayscale(uint16_t iter, uint16_t n_max) {
+  if (iter == n_max) {
+    return 0x0000;
+  }
+  uint16_t brightness = iter & 0xf;
+  return swap_u16(((brightness << 12) | ((brightness << 7) | brightness<<1)));
+}
+
+
+//! \brief Calculate binary logarithm for unsigned integer argument x
+//! \note  For x equal 0, the function returns -1.
+int ilog2(unsigned x) {
+  if (x == 0) return -1;
+  int n = 1;
+  if ((x >> 16) == 0) { n += 16; x <<= 16; }
+  if ((x >> 24) == 0) { n += 8; x <<= 8; }
+  if ((x >> 28) == 0) { n += 4; x <<= 4; }
+  if ((x >> 30) == 0) { n += 2; x <<= 2; }
+  n -= x >> 31;
+  return 31 - n;
+}
+
+
+//! \brief  Map number of performed iterations to a colour
+//! \param  iter  performed number of iterations
+//! \param  n_max maximum number of iterations
+//! \return colour in rgb565 format little Endian (big Endian for openrisc)
+rgb565 iter_to_colour(uint16_t iter, uint16_t n_max) {
+  if (iter == n_max) {
+    return 0x0000;
+  }
+  uint16_t brightness = (iter&1)<<4|0xF;
+  uint16_t r = (iter & (1 << 3)) ? brightness : 0x0;
+  uint16_t g = (iter & (1 << 2)) ? brightness : 0x0;
+  uint16_t b = (iter & (1 << 1)) ? brightness : 0x0;
+  return swap_u16(((r & 0x1f) << 11) | ((g & 0x1f) << 6) | ((b & 0x1f)));
+}
+
+rgb565 iter_to_colour1(uint16_t iter, uint16_t n_max) {
+  if (iter == n_max) {
+    return 0x0000;
+  }
+  uint16_t brightness = ((iter&0x78)>>2)^0x1F;
+  uint16_t r = (iter & (1 << 2)) ? brightness : 0x0;
+  uint16_t g = (iter & (1 << 1)) ? brightness : 0x0;
+  uint16_t b = (iter & (1 << 0)) ? brightness : 0x0;
+  return swap_u16(((r & 0xf) << 12) | ((g & 0xf) << 7) | ((b & 0xf)<<1));
+}
+
+//! \brief  Draw fractal into frame buffer
+//! \param  width  width of frame buffer
+//! \param  height height of frame buffer
+//! \param  cfp_p  pointer to fractal function
+//! \param  i2c_p  pointer to function mapping number of iterations to colour
+//! \param  cx_0   start x-coordinate
+//! \param  cy_0   start y-coordinate
+//! \param  delta  increment for x- and y-coordinate
+//! \param  n_max  maximum number of iterations
+void draw_fractal(rgb565 *fbuf, int width, int height,
+                  calc_frac_point_p cfp_p, iter_to_colour_p i2c_p,
+                  fixed cx_0, fixed cy_0, fixed delta, uint16_t n_max) {
+  rgb565 *pixel = fbuf;
+  fixed cy = cy_0;
+  for (int k = 0; k < height; ++k) {
+    fixed cx = cx_0;
+    for(int i = 0; i < width; ++i) {
+      uint16_t n_iter = (*cfp_p)(cx, cy, n_max);
+      rgb565 colour = (*i2c_p)(n_iter, n_max);
+      *(pixel++) = colour;
+      cx += delta;
+    }
+    cy += delta;
+  }
+}
