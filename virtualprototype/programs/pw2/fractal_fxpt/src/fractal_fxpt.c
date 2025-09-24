@@ -35,20 +35,22 @@ fixed mul_fixed_point(fixed a, fixed b) {
 //! \param  cy    y-coordinate
 //! \param  n_max maximum number of iterations
 //! \return       number of performed iterations at coordinate (cx, cy)
+const fixed fixed_2 = ITOFIX(2);
+const fixed fixed_4 = ITOFIX(4);
 uint16_t calc_mandelbrot_point_soft(fixed cx, fixed cy, uint16_t n_max) {
-  fixed x = FTOFIX(cx);
-  fixed y = FTOFIX(cy);
+  fixed x = cx;
+  fixed y = cy;
   uint16_t n = 0;
   fixed xx, yy, two_xy;
   do {
     xx = mul_fixed_point(x, x);
     yy = mul_fixed_point(y, y);
-    two_xy =  mul_fixed_point(ITOFIX(2), mul_fixed_point(x, y));
+    two_xy =  mul_fixed_point(fixed_2, mul_fixed_point(x, y));
 
     x = xx - yy + cx;
     y = two_xy + cy;
     ++n;
-  } while ((xx + yy < ITOFIX(4)) && (n < n_max));
+  } while ((xx + yy < fixed_4) && (n < n_max));
   return n;
 }
 

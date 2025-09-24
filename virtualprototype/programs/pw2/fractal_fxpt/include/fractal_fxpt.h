@@ -18,7 +18,7 @@ typedef long long fixed;
 // thus if we want to shift by f = 3, then it will shift by 3
 // getting 00001000, which is 2^3
 
-// [Rounting] -> we are not doing this atm
+// [Rounding] -> we are not doing this atm
 // Why Rounding? 
 // When you do say 1.3 * 2^3, you get 10.4 which is not an integer
 // you don't want the float points, so you round(10.4) = 10
