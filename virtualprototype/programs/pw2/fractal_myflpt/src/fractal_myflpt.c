@@ -1,28 +1,33 @@
+#include "myflpt.h"
 #include "fractal_myflpt.h"
 #include <swap.h>
+#include <stdio.h>
+
 
 //! \brief  Mandelbrot fractal point calculation function
 //! \param  cx    x-coordinate
 //! \param  cy    y-coordinate
 //! \param  n_max maximum number of iterations
 //! \return       number of performed iterations at coordinate (cx, cy)
-uint16_t calc_mandelbrot_point_soft(float cx, float cy, uint16_t n_max) {
-  float x = cx;
-  float y = cy;
+uint16_t calc_mandelbrot_point_soft( myft cx,  myft cy, uint16_t n_max) 
+{
+  myft x = cx;
+  myft y = cy;
   uint16_t n = 0;
-  float xx, yy, two_xy;
+  myft xx, yy, xy, two_xy;
+  
   do {
-    xx = x * x;
-    yy = y * y;
-    two_xy = 2 * x * y;
+    xx =  myft_mul(x, x);
+    yy =  myft_mul(y, y);
+    xy = myft_mul(x, y);
+    two_xy = myft_add(xy ,xy);
 
-    x = xx - yy + cx;
-    y = two_xy + cy;
+    x = myft_add(myft_sub(xx, yy), cx);
+    y = myft_add(two_xy, cy);
     ++n;
-  } while (((xx + yy) < 4) && (n < n_max));
+  } while ( (myft_add(xx, yy) < FOUR_MYFT) && (n < n_max));
   return n;
 }
-
 
 //! \brief  Map number of performed iterations to black and white
 //! \param  iter  performed number of iterations
@@ -44,6 +49,7 @@ rgb565 iter_to_grayscale(uint16_t iter, uint16_t n_max) {
   if (iter == n_max) {
     return 0x0000;
   }
+  // HDMI-interface-chip only takes RGB444 colours, so use only 4 bits per colour
   uint16_t brightness = iter & 0xf;
   return swap_u16(((brightness << 12) | ((brightness << 7) | brightness<<1)));
 }
@@ -100,17 +106,19 @@ rgb565 iter_to_colour1(uint16_t iter, uint16_t n_max) {
 //! \param  n_max  maximum number of iterations
 void draw_fractal(rgb565 *fbuf, int width, int height,
                   calc_frac_point_p cfp_p, iter_to_colour_p i2c_p,
-                  float cx_0, float cy_0, float delta, uint16_t n_max) {
+                   myft cx_0,  myft cy_0,  myft delta, uint16_t n_max) {
   rgb565 *pixel = fbuf;
-  float cy = cy_0;
-  for (int k = 0; k < height; ++k) {
-    float cx = cx_0;
-    for(int i = 0; i < width; ++i) {
+   myft cy = cy_0;
+  for (int k = 0; k < height; ++k) 
+  {
+     myft cx = cx_0;
+    for(int i = 0; i < width; ++i) 
+    {
       uint16_t n_iter = (*cfp_p)(cx, cy, n_max);
       rgb565 colour = (*i2c_p)(n_iter, n_max);
       *(pixel++) = colour;
-      cx += delta;
+      cx = myft_add(cx, delta);
     }
-    cy += delta;
+    cy = myft_add(cy, delta);
   }
 }

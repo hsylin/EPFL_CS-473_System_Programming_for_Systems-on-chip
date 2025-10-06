@@ -3,6 +3,19 @@
 #include <stddef.h>
 #include <stdio.h>
 
+void print_bits_unsigned(char *string, unsigned int value) {
+    // Number of bits in the type 
+    const int num_bits = 32; 
+    printf("%s ", string);
+    // Iterate from the MSB (bit num_bits - 1) down to 0
+    for (int i = num_bits - 1; i >= 0; i--) {
+        // 1. Right shift the value by 'i' positions to move the target bit to the LSB position.
+        // 2. Bitwise AND the result with 1 (00...01) to isolate that single bit.
+        int bit = (value >> i) & 1;
+        printf("%d", bit);
+    }
+    printf("\n");
+}
 
 // Fixed Point: Addition
 fixed add_fixed_point(fixed a, fixed b) {
@@ -25,7 +38,8 @@ fixed mul_fixed_point(fixed a, fixed b) {
 
   // This operation will throw away f fractional bits
   // Thus rounding may be needed
-  fixed mul_num = (a * b) >> FIXED_POINT_FRAC_BITS;
+  int64_t fixed_2q_2f = (int64_t)a * (int64_t)b;
+  fixed mul_num = (fixed)(fixed_2q_2f >> FIXED_POINT_FRAC_BITS);
   return mul_num;
 }
 
@@ -36,23 +50,54 @@ fixed mul_fixed_point(fixed a, fixed b) {
 //! \param  n_max maximum number of iterations
 //! \return       number of performed iterations at coordinate (cx, cy)
 const fixed fixed_2 = ITOFIX(2);
+const fixed neg_fixed_2 = ITOFIX(-2);
 const fixed fixed_4 = ITOFIX(4);
+const fixed neg_fixed_4 = ITOFIX(-4);
+
+fixed is_escaped_fixed(fixed x, fixed y) {
+  if (x > fixed_2 || x < neg_fixed_2 || y > fixed_2 || y < neg_fixed_2){
+    return 1;
+  }
+  fixed xx = mul_fixed_point(x, x);
+  fixed yy = mul_fixed_point(y, y);
+  fixed result = xx + yy;
+  return (result >= fixed_4) ? 1  : 0;
+}
+
+
 uint16_t calc_mandelbrot_point_soft(fixed cx, fixed cy, uint16_t n_max) {
   fixed x = cx;
   fixed y = cy;
-  uint16_t n = 0;
+  uint16_t n = 1;
   fixed xx, yy, two_xy;
-  do {
+  while (!is_escaped_fixed(x, y) && (n < n_max)){
     xx = mul_fixed_point(x, x);
     yy = mul_fixed_point(y, y);
-    two_xy =  mul_fixed_point(fixed_2, mul_fixed_point(x, y));
+    two_xy = mul_fixed_point(fixed_2, mul_fixed_point(x, y));
 
     x = xx - yy + cx;
     y = two_xy + cy;
     ++n;
-  } while ((xx + yy < fixed_4) && (n < n_max));
+  } 
   return n;
 }
+
+// uint16_t calc_mandelbrot_point_soft(fixed cx, fixed cy, uint16_t n_max) {
+//   fixed x = cx;
+//   fixed y = cy;
+//   uint16_t n = 0;
+//   fixed xx, yy, two_xy;
+//   do {
+//     xx = mul_fixed_point(x, x);
+//     yy = mul_fixed_point(y, y);
+//     two_xy = mul_fixed_point(fixed_2, mul_fixed_point(x, y));
+
+//     x = xx - yy + cx;
+//     y = two_xy + cy;
+//     ++n;
+//   } while(((xx + yy) < 4) && (n < n_max));
+//   return n;
+// }
 
 
 
@@ -149,3 +194,5 @@ void draw_fractal(rgb565 *fbuf, int width, int height,
     cy += delta;
   }
 }
+
+

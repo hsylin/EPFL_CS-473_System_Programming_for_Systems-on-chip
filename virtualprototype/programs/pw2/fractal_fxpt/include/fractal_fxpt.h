@@ -5,7 +5,7 @@
 
 // Fixed Point Comparision
 #define FIXED_POINT_FRAC_BITS 28
-typedef long long fixed;
+typedef int32_t fixed;
 
 // The algorithm to convert FTOFIX is as below
 // 1. Calculate x = floating_input * 2^(fractional_bits)
