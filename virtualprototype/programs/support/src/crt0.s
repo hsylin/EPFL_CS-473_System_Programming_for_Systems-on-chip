@@ -141,7 +141,6 @@ _vectors:
     .word       instruction_page_fault_handler
     .word       tick_timer_handler
     .word       allignment_exception_handler
-    .word       illegal_instruction_handler
     .word       external_interrupt_handler
     .word       dtlb_miss_handler
     .word       itlb_miss_handler

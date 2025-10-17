@@ -32,14 +32,14 @@ extern "C" {
 #define PERF_DCACHE_WRITE_THROUGH_MASK (((uint32_t)1) << 28)
 #define PERF_DCACHE_SNOOPY_INVAL_MASK (((uint32_t)1) << 29)
 
-#define PERF_COUNTER_0 0
-#define PERF_COUNTER_1 1
-#define PERF_COUNTER_2 2
-#define PERF_COUNTER_3 3
-#define PERF_COUNTER_4 4
-#define PERF_COUNTER_5 5
-#define PERF_COUNTER_6 6
-#define PERF_COUNTER_7 7
+#define PERF_COUNTER_0 0 //stall cycles
+#define PERF_COUNTER_1 1 //total clock cycles
+#define PERF_COUNTER_2 2 //instruction count
+#define PERF_COUNTER_3 3 //cache misses
+#define PERF_COUNTER_4 4 //branch mispredictions
+#define PERF_COUNTER_5 5 //bus cycles or memory latency events
+#define PERF_COUNTER_6 6 //load/store operations
+#define PERF_COUNTER_7 7 //resource saturation events
 #define PERF_COUNTER_RUNTIME 8
 
 #define PERF_SPR 0xF800
