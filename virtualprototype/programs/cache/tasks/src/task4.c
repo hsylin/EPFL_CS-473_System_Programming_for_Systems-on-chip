@@ -18,11 +18,14 @@
 // defines the offset of the base address register.
 #define LEDS_BASEADDR_OFFSET 0x7FCull
 
-void init_dcache() {
-    // YOU CAN MODIFY THIS.
-    dcache_enable(0);
-    dcache_write_cfg(CACHE_FOUR_WAY | CACHE_SIZE_4K | CACHE_REPLACE_LRU | CACHE_WRITE_BACK);
-    dcache_enable(1);
+void init_dcache() 
+{
+    // Method 1: enable dcache with write-through policy
+     dcache_enable(1);
+     dcache_write_cfg(CACHE_FOUR_WAY | CACHE_SIZE_4K | CACHE_REPLACE_LRU | CACHE_WRITE_THROUGH);
+
+    // Method 2: disable dcache
+    // dcache_enable(0);
 }
 
 /**
