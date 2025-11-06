@@ -20,8 +20,12 @@ struct item_t {
     unsigned id;
 
     /** @brief Item data. */
-    char data[ITEM_DATALEN];
+    //char data[ITEM_DATALEN];
+
+    // use 4 bytes instead of 32 bytes
+    char* data;
 };
+
 
 /**
  * @brief Initializes items with random data.

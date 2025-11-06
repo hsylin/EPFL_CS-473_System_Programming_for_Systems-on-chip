@@ -50,6 +50,8 @@ void items_init(item_t* items, size_t log2n) {
     }
 }
 
+
+
 item_t* items_find(item_t* items, size_t log2n, unsigned id) {
     // YOU ARE NOT SUPPOSED TO MODIFY THIS.
     for (size_t i = 0; i < (1 << log2n); ++i) {
@@ -60,11 +62,18 @@ item_t* items_find(item_t* items, size_t log2n, unsigned id) {
 }
 
 void item_init(item_t* item, uint32_t id, const char* data) {
+    mem.next = 0;
     // YOU CAN MODIFY THIS.
     item->id = id;
 
     if (data != NULL)
+    {
+        // Allocate data out-of-line so item_t shrinks (id+ptr); more id fit per cache line → fewer misses in id-only scans.
+        item->data = alloc(ITEM_DATALEN);
         memcpy(item->data, data, ITEM_DATALEN);
+    }
     else
         memset(item->data, 0, ITEM_DATALEN);
 }
+
+
