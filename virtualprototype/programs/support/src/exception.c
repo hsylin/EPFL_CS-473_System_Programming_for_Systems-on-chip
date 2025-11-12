@@ -24,9 +24,9 @@ __weak void allignment_exception_handler() {
     puts("allig!");
 }
 
-// __weak void illegal_instruction_handler() {
-//     puts("fuck ");
-// }
+ __weak void illegal_instruction_handler() {
+     puts("fuck ");
+ }
 
 __weak void external_interrupt_handler() {
     puts("ping");
