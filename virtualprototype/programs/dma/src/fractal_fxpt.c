@@ -109,7 +109,9 @@ rgb565 iter_to_colour1(uint16_t iter, uint16_t n_max) {
 //! \param  delta  increment for x- and y-coordinate
 //! \param  n_max  maximum number of iterations
 //#define __DMA__
-  
+
+
+/* single-buffer SPM + DMA 
 void draw_fractal(rgb565 *fbuf,volatile unsigned int *dma,  volatile unsigned int *spm ,int width, int height,
                   calc_frac_point_p cfp_p, iter_to_colour_p i2c_p,
                   fxpt_4_28 cx_0, fxpt_4_28 cy_0, fxpt_4_28 delta, uint16_t n_max) 
@@ -145,5 +147,52 @@ void draw_fractal(rgb565 *fbuf,volatile unsigned int *dma,  volatile unsigned in
       cy += delta;
   }
 }
+ */
  
+
+void draw_fractal(rgb565 *fbuf,volatile unsigned int *dma,  volatile unsigned int *spm ,int width, int height,
+                  calc_frac_point_p cfp_p, iter_to_colour_p i2c_p,
+                  fxpt_4_28 cx_0, fxpt_4_28 cy_0, fxpt_4_28 delta, uint16_t n_max) 
+{
+  int is_odd = 0;
+  volatile unsigned int *pixel;
+  volatile unsigned int *spm_write_buffer = spm;
+  volatile unsigned int *spm_dma_buffer   = spm + width/2;
+  int colour;
+  fxpt_4_28 cy = cy_0;
+  
+  for (int k = 0; k < height; ++k) {
+    
+    pixel = spm_write_buffer; 
+    fxpt_4_28 cx = cx_0;
+    int is_odd = 0;
+    for(int i = 0; i < width; ++i) {
+      uint16_t n_iter = (*cfp_p)(cx, cy, n_max);
+      rgb565 colour_tmp = (*i2c_p)(n_iter, n_max);
+      if (is_odd) 
+      {
+        colour = (colour << 16) | (uint32_t)colour_tmp;
+        *(pixel++) = colour; // 256 times SPM store（32-bit）
+      } else 
+      {
+        
+        colour = (uint32_t)colour_tmp;
+      }
+      is_odd ^= 1; 
+      cx += delta;
+    }
+    volatile unsigned int *tmp = spm_write_buffer;
+     spm_write_buffer = spm_dma_buffer;
+     spm_dma_buffer = tmp;
+      
+     while (swap_u32(dma[START_STATUS_ID]) & DMA_BUSY_BIT);
+      
+      dma[SPM_ADDRESS_ID] = swap_u32((unsigned int) &spm_dma_buffer[0]);
+      dma[MEMORY_ADDRESS_ID] = swap_u32( (unsigned int) &fbuf[k * width] );
+      dma[START_STATUS_ID]   = swap_u32(DMA_FROM_SPM_TO_MEM | 255);
+      cy += delta; 
+  }
+  while (swap_u32(dma[START_STATUS_ID]) & DMA_BUSY_BIT);
+}
+
 
