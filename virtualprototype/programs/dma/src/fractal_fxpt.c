@@ -141,7 +141,7 @@ void draw_fractal(rgb565 *fbuf,volatile unsigned int *dma,  volatile unsigned in
      while (swap_u32(dma[START_STATUS_ID]) & DMA_BUSY_BIT);
       
       dma[MEMORY_ADDRESS_ID] = swap_u32( (unsigned int) &fbuf[k * width] );
-      dma[START_STATUS_ID]   = swap_u32(DMA_FROM_SPM_TO_MEM | BURST_SIZE);
+      dma[START_STATUS_ID]   = swap_u32(DMA_FROM_SPM_TO_MEM | 255);
       cy += delta;
   }
 }

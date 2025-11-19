@@ -11,7 +11,7 @@
 
 rgb565 frameBuffer[SCREEN_WIDTH*SCREEN_HEIGHT];
 
-//#define __REALLY_FAST__
+#define __REALLY_FAST__
 #define BURST_SIZE 255
 
 int main() 
@@ -50,7 +50,7 @@ int main()
    dma[TRANSFER_SIZE_ID] = swap_u32(256);
 
    /* Clear screen */
-   for (int i = 0 ; i < SCREEN_WIDTH*SCREEN_HEIGHT ; i++) frameBuffer[i]=0;
+   //for (int i = 0 ; i < SCREEN_WIDTH*SCREEN_HEIGHT ; i++) frameBuffer[i]=0;
 
    perf_start();
    
