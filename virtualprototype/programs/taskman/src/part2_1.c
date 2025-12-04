@@ -69,14 +69,14 @@ static void entry_task() {
     // implement the functionality.
 
     // SECTION: basic test
-    #if 0
+    #if 1
     taskman_spawn(&periodic_task, (void*)1000, 4ull << 10);
     taskman_spawn(&periodic_task, (void*)3000, 4ull << 10);
     taskman_spawn(&periodic_task, (void*)9000, 4ull << 10);
     #endif
 
     // SECTION: uart test
-    #if 0
+    #if 1
     
     taskman_spawn(&uart_task, NULL, 8ull << 10);
     #endif
