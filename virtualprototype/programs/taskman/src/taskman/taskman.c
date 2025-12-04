@@ -81,9 +81,11 @@ void* taskman_spawn(coro_fn_t coro_fn, void* arg, size_t stack_sz) {
     // (3) register the coroutine in the tasks array
     // use die_if_not() statements to handle error conditions (like no memory)
 
+    
+    TASKMAN_LOCK();
+
     die_if_not(taskman.stack_offset + stack_sz <= TASKMAN_STACK_SIZE);
 
-    TASKMAN_LOCK();
     
     void* new_stack = &taskman.stack[taskman.stack_offset];
     taskman.stack_offset += stack_sz;
@@ -122,31 +124,24 @@ void taskman_loop()
     {
         TASKMAN_LOCK();
         int stop = taskman.should_stop;
+        size_t tasks_count = taskman.tasks_count;
+        size_t handlers_count = taskman.handlers_count;
         TASKMAN_RELEASE();
         if (stop) break;
 
         TASKMAN_LOCK();
-        size_t tasks_count = taskman.tasks_count;
-        size_t handlers_count = taskman.handlers_count;
-        struct taskman_handler* local_handlers[TASKMAN_NUM_HANDLERS];
         for (size_t i = 0; i < handlers_count; ++i) 
         {
-            local_handlers[i] = taskman.handlers[i];
+            taskman.handlers[i]->loop(taskman.handlers[i]);
         }
         TASKMAN_RELEASE();
 
-
-        for (size_t i = 0; i < handlers_count; ++i) 
-        {
-            local_handlers[i]->loop(local_handlers[i]);
-        }
 
 
         // (b) Iterate over all the tasks, and resume them.
         for(int i = 0; i < tasks_count; i++) 
         {
             int should_run = 0;
-            void* stack = NULL;
             TASKMAN_LOCK();
             struct task_data* task_data = coro_data(taskman.tasks[i]);  
 
